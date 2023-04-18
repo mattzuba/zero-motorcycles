@@ -18,14 +18,14 @@ class Zero:
         self.auth = ZeroAuth(username, password)
         pass
 
-    def get_units(self):
+    async def get_units(self):
         data = {
             "commandname": "get_units"
         }
 
         return self._make_request(data).json()
 
-    def get_last_transmit(self, unit):
+    async def get_last_transmit(self, unit):
         data = {
             "unitnumber": unit,
             "commandname": "get_last_transmit"
@@ -33,7 +33,7 @@ class Zero:
 
         return self._make_request(data).json()
 
-    def get_expiration_date(self, unit):
+    async def get_expiration_date(self, unit):
         data = {
             "unitnumber": unit,
             "unittype": 5,
