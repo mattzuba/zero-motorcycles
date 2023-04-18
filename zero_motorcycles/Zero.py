@@ -9,6 +9,7 @@ import requests.auth
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
+from requests.exceptions import HTTPError
 
 
 class Zero:
@@ -23,7 +24,7 @@ class Zero:
             "commandname": "get_units"
         }
 
-        return self._make_request(data).json()
+        return self._make_request(data)
 
     async def get_last_transmit(self, unit):
         data = {
@@ -31,7 +32,7 @@ class Zero:
             "commandname": "get_last_transmit"
         }
 
-        return self._make_request(data).json()
+        return self._make_request(data)
 
     async def get_expiration_date(self, unit):
         data = {
@@ -40,10 +41,20 @@ class Zero:
             "commandname": "get_expiration_date"
         }
 
-        return self._make_request(data).json()
+        return self._make_request(data)
 
     def _make_request(self, data):
-        return requests.post(self.API_URL, json=data, auth=self.auth, headers={"User-Agent": "ZeroMoto/1.0"})
+        response = requests.post(self.API_URL, json=data, auth=self.auth, headers={"User-Agent": "ZeroMoto/1.0"})
+
+        # Check for the usual errors
+        response.raise_for_status()
+
+        json_data = response.json()
+
+        if response.status_code >= 600:
+            raise HTTPError(json_data['error'], response=response)
+
+        return json_data
 
 
 class ZeroAuth(requests.auth.AuthBase):
