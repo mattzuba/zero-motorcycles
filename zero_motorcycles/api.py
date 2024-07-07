@@ -14,6 +14,8 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 
+from .model import Unit, Zero, Expire
+
 
 class ZeroApiError(Exception):
     """Exception to indicate a general API error."""
@@ -38,10 +40,10 @@ def _verify_response_or_raise(response: aiohttp.ClientResponse) -> None:
     response.raise_for_status()
 
 
-class Zero:
+class ZeroApiClient:
     """Sample API Client."""
 
-    API_URL = 'https://api-us-cypherstore-prod.zeromotorcycles.com/starcom/v1'
+    API_URL = "https://api-us-cypherstore-prod.zeromotorcycles.com/starcom/v1"
     ENCRYPTION_KEY = "8FA043AADEC92367108D0E25D2C6064F"
     SOURCE = "zero"
     FORMAT = "json"
@@ -58,28 +60,23 @@ class Zero:
         self._session = session if session is not None else aiohttp.ClientSession()
 
     async def async_get_units(self) -> Any:
-        data = {
-            "commandname": "get_units"
-        }
+        data = {"commandname": "get_units"}
 
-        return await self._api_wrapper(method="post", data=data)
+        response = await self._api_wrapper(method="post", data=data)
+        return [Unit(**unit) for unit in response]
 
-    async def async_get_last_transmit(self, unit):
-        data = {
-            "unitnumber": unit,
-            "commandname": "get_last_transmit"
-        }
+    async def async_get_last_transmit(self, unit) -> Zero:
+        data = {"unitnumber": unit, "commandname": "get_last_transmit"}
 
-        return await self._api_wrapper(method="post", data=data)
+        response = await self._api_wrapper(method="post", data=data)
+        model = Zero(**response[0])
+        return model
 
-    async def async_get_expiration_date(self, unit):
-        data = {
-            "unitnumber": unit,
-            "unittype": 5,
-            "commandname": "get_expiration_date"
-        }
+    async def async_get_expiration_date(self, unit) -> Any:
+        data = {"unitnumber": unit, "unittype": 5, "commandname": "get_expiration_date"}
 
-        return await self._api_wrapper(method="post", data=data)
+        response = await self._api_wrapper(method="post", data=data)
+        return Expire(**response)
 
     async def _api_wrapper(
         self,
@@ -135,7 +132,9 @@ class Zero:
         key = key_iv[:32]
         iv = key_iv[32:]
         aes = AES.new(key, AES.MODE_CBC, iv)
-        return base64.b64encode(b"Salted__" + salt + aes.encrypt(pad(message, AES.block_size))).decode()
+        return base64.b64encode(
+            b"Salted__" + salt + aes.encrypt(pad(message, AES.block_size))
+        ).decode()
 
     @staticmethod
     def _bytes_to_key(data, salt, output=48):
