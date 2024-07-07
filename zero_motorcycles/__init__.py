@@ -2,4 +2,5 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-from .api import Zero
+from .api import ZeroApiClient as ZeroApiClient
+from .model import Zero as Zero, Unit as Unit
