@@ -3,16 +3,17 @@ name: Publish to PyPi
 on:
   push:
     branches:
-      - "master"
+      - "release/**"
+  release:
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
@@ -22,6 +23,7 @@ jobs:
         run: pipx run hatch build
 
       - name: Publish to Test PyPI
+        if: startsWith(github.head_ref, 'release/')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
